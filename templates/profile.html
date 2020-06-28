@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    {% include 'includes/user_info.html' %}
+
+    {% for post in page %}
+        {% include 'includes/post_item.html' %}
+
+    {% endfor %}
+
+    {% if page.has_other_pages %}
+        {% include 'includes/paginator.html' with items=page paginator=paginator %}
+    {% endif %}
+
+
+{% endblock %}
