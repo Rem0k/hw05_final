@@ -41,21 +41,23 @@ def profile(request, username):
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     return render(request, 'profile.html',
-                  {'author': author, 'posts': posts,
-                   'page': page, 'paginator': paginator})
+                  {'author': author, 'page': page, 'paginator': paginator})
 
 
 def post_view(request, username, post_id):
     author = get_object_or_404(User, username=username)
-    post = get_object_or_404(author.posts, id=post_id)
+    post_count = Post.objects.filter(
+        pk=post_id, author__username=username).count()
+    post = get_object_or_404(
+        Post, pk=post_id, author__username=username)
     return render(request, 'post.html',
-                  {'author': author, 'post': post})
+                  {'author': author, 'post': post, 'post_count': post_count})
 
 
 @login_required
 def post_edit(request, username, post_id):
     author = get_object_or_404(User, username=username)
-    post = get_object_or_404(Post, pk=post_id)
+    post = get_object_or_404(Post, pk=post_id, author__username=username)
     redirect_url = redirect('post', username=post.author, post_id=post.id)
     form = PostForm(request.POST or None, instance=post)
     if request.user != author:
