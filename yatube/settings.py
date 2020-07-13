@@ -8,11 +8,13 @@ SECRET_KEY = '@78pkdx_e4riczi!&p%+qtl0ofz8)a(44wix661mu*wxulhgm&'
 
 DEBUG = True
 
+THUMBNAIL_DEBUG = False
+
 ALLOWED_HOSTS = [
-        'localhost',
-        '127.0.0.1',
-        '[::1]',
-        'testserver',
+    'localhost',
+    '127.0.0.1',
+    '[::1]',
+    'testserver',
 ]
 
 INSTALLED_APPS = [
@@ -26,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.flatpages',
     'django.contrib.sites',
+    'sorl.thumbnail',
 ]
 
 MIDDLEWARE = [
@@ -87,6 +90,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
 LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'UTC'
@@ -99,7 +108,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [(os.path.join(BASE_DIR, 'static'))]
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 LOGIN_URL = '/auth/login/'
 
@@ -112,3 +121,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 
 SITE_ID = 1
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
