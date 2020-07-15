@@ -1,7 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
-from django.urls import reverse
 
 
 from .models import Post, Group, User, Follow
@@ -9,7 +8,7 @@ from .forms import PostForm, CommentForm
 
 
 def index(request):
-    paginator = Paginator(Post.objects.all(), 10)
+    paginator = Paginator(Post.objects.select_related('group').all(), 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     return render(request, 'index.html',
@@ -45,9 +44,8 @@ def profile(request, username):
     page = paginator.get_page(page_number)
     following = False
     if request.user.is_authenticated:
-        subscription = Follow.objects.filter(user=request.user, author=author)
-        if subscription.exists():
-            following = True
+        following = Follow.objects.filter(user=request.user,
+                                          author=author).exists()
     return render(request, 'profile.html',
                   {'author': author, 'page': page, 'paginator': paginator,
                    'following': following})
@@ -105,17 +103,17 @@ def add_comment(request, username, post_id):
         comment.author = request.user
         comment.post = post
         form.save()
-        return redirect(reverse('post', kwargs={
-            'username': username, 'post_id': post_id}))
-    return redirect(reverse('post', kwargs={
-        'username': username, 'post_id': post_id}))
+        return redirect('post', username, post_id)
+    return redirect('post', username, post_id)
 
 
 @login_required
 def follow_index(request):
     author = get_object_or_404(User, username=request.user.username)
-    post_list = Post.objects.select_related('author'). \
-        filter(author__following__user=request.user)
+    post_list = (
+        Post.objects.select_related('author').
+            filter(author__following__user=request.user)
+    )
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
@@ -135,5 +133,7 @@ def profile_follow(request, username):
 @login_required
 def profile_unfollow(request, username):
     author = get_object_or_404(User, username=username)
-    Follow.objects.filter(user=request.user, author=author).delete()
+    following = Follow.objects.filter(user=request.user, author=author)
+    if following.exists():
+        following.delete()
     return redirect('follow_index')

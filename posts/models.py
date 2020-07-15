@@ -25,7 +25,7 @@ class Post(models.Model):
     image = models.ImageField(upload_to='posts/', blank=True, null=True)
 
     class Meta:
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
 
 
 class Comment(models.Model):
@@ -38,7 +38,7 @@ class Comment(models.Model):
     text = models.TextField()
 
     class Meta:
-        ordering = ['created']
+        ordering = ('created',)
 
 
 class Follow(models.Model):
@@ -50,4 +50,4 @@ class Follow(models.Model):
                                     db_index=True)
 
     class Meta:
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)

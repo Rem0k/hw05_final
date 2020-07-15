@@ -5,7 +5,7 @@ from .models import Post, Comment
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ['group', 'text', 'image']
+        fields = ('group', 'text', 'image')
         labels = {
             'group': 'Группа',
             'text': 'Сообщение',
@@ -22,6 +22,11 @@ class CommentForm(forms.ModelForm):
         model = Comment
         fields = ('text',)
         text = forms.CharField(widget=forms.Textarea)
-
+        labels = {
+            'text': 'Комментарий'
+        }
+        help_texts = {
+            'text': 'Напишите комментарий тут :)'
+        }
 
 

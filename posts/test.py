@@ -103,8 +103,7 @@ class TestProfileAndPosts(TestCase):
                                         user=self.user)
 
     def test_404(self):
-        response = self.client.get(
-            reverse('profile', kwargs={'username': 'notauser'}))
+        response = self.client.get('request/wrong/url/')
         self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, 'misc/404.html')
 
@@ -207,6 +206,7 @@ class TestFollowSystem(TestCase):
             'username': self.following}), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(self.link.exists())
+        self.assertEqual(1, Post.objects.exists())
 
     def test_unfollow(self):
         response = self.client.get(
@@ -214,6 +214,7 @@ class TestFollowSystem(TestCase):
             follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(self.link.exists())
+        self.assertEqual(1, Post.objects.exists())
 
     def test_follow_index(self):
         Follow.objects.create(user=self.follower, author=self.following)
@@ -224,3 +225,27 @@ class TestFollowSystem(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(follow_index_url)
         self.assertNotContains(response, self.post.text)
+
+
+class TestComments(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='user',
+                                             password='password')
+        self.post = Post.objects.create(author=self.user, text='TestText')
+
+    def test_comment(self):
+        comment_url = reverse('add_comment', kwargs={'username': self.user,
+                                                     'post_id': self.post.id})
+        self.client.get(comment_url, follow=True)
+        login_url = self.client.post(reverse('login'))
+        self.assertTemplateUsed(login_url,
+                                template_name='registration/login.html')
+
+        self.client.force_login(self.user)
+        self.client.post(comment_url, {'text': 'Test Comment'}, follow=True)
+        response = self.client.get(comment_url, follow=True)
+        self.assertContains(response, 'Test Comment')
+
+# По поводу Flake8 - он не выявил стилистических нарушений +
+# я всегда пользуюсь встроенным линтером в PyCharm
