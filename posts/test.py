@@ -6,7 +6,7 @@ from django.test import TestCase, Client
 from django.test import override_settings
 from django.urls import reverse
 
-from posts.models import Post, Group, Follow
+from posts.models import Post, Group, Follow, Comment
 
 TEST_CACHES = {
     'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}}
@@ -206,7 +206,7 @@ class TestFollowSystem(TestCase):
             'username': self.following}), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(self.link.exists())
-        self.assertEqual(1, Post.objects.exists())
+        self.assertEqual(1, Follow.objects.count())
 
     def test_unfollow(self):
         response = self.client.get(
@@ -214,7 +214,7 @@ class TestFollowSystem(TestCase):
             follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(self.link.exists())
-        self.assertEqual(1, Post.objects.exists())
+        self.assertEqual(0, Follow.objects.count())
 
     def test_follow_index(self):
         Follow.objects.create(user=self.follower, author=self.following)
@@ -229,23 +229,26 @@ class TestFollowSystem(TestCase):
 
 class TestComments(TestCase):
     def setUp(self):
+        self.logged_client = Client()
         self.client = Client()
         self.user = User.objects.create_user(username='user',
                                              password='password')
         self.post = Post.objects.create(author=self.user, text='TestText')
+        self.logged_client.force_login(self.user)
 
     def test_comment(self):
         comment_url = reverse('add_comment', kwargs={'username': self.user,
                                                      'post_id': self.post.id})
-        self.client.get(comment_url, follow=True)
-        login_url = self.client.post(reverse('login'))
-        self.assertTemplateUsed(login_url,
-                                template_name='registration/login.html')
+        self.logged_client.post(comment_url, {'text': 'Test Comment'},
+                                follow=True)
 
-        self.client.force_login(self.user)
-        self.client.post(comment_url, {'text': 'Test Comment'}, follow=True)
-        response = self.client.get(comment_url, follow=True)
+        comment = Comment.objects.filter(text='Test Comment').exists()
+        response = self.logged_client.get(comment_url, follow=True)
         self.assertContains(response, 'Test Comment')
+        self.assertTrue(comment)
 
-# По поводу Flake8 - он не выявил стилистических нарушений +
-# я всегда пользуюсь встроенным линтером в PyCharm
+        self.client.post(comment_url, {'text': 'Unlogged Comment'},
+                         follow=True)
+        self.assertEqual(0, Comment.objects.filter(
+            text='Unlogged Comment').count())
+
